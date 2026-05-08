@@ -1,0 +1,63 @@
+export const TILE_SIZE = 16;
+export const GAME_WIDTH = 256;
+export const GAME_HEIGHT = 240;
+
+export const PLAYER = {
+  WALK_SPEED: 100,
+  RUN_SPEED: 160,
+  JUMP_VELOCITY: -350,
+  GRAVITY: 800,
+  BOUNCE_VELOCITY: -120,
+};
+
+export const GOOMBA = {
+  SPEED: 40,
+  SCORE: 100,
+};
+
+export const KOOPA = {
+  SPEED: 40,
+  SHELL_SPEED: 250,
+  SCORE: 200,
+};
+
+export const MUSHROOM = {
+  SPEED: 80,
+  BOUNCE: -150,
+};
+
+export const COIN = {
+  SCORE: 200,
+  BOUNCE: -200,
+};
+
+export const GAME = {
+  TIME_LIMIT: 300,
+  LIVES: 3,
+};
+
+export const COLORS = {
+  SKY: 0x5c94fc,
+  GROUND: 0xc84c0c,
+  BRICK: 0xc84c0c,
+  BRICK_LINE: 0x801800,
+  QUESTION: 0xe4a010,
+  QUESTION_MARK: 0xffffff,
+  PIPE_DARK: 0x005800,
+  PIPE_LIGHT: 0x00a800,
+  MARIO_RED: 0xb81010,
+  MARIO_SKIN: 0xfca044,
+  MARIO_SHOE: 0x6b3000,
+  GOOMBA_BODY: 0xc84c0c,
+  GOOMBA_FEET: 0xe4a010,
+  KOOPA_BODY: 0x00a800,
+  KOOPA_FEET: 0xe4a010,
+  KOOPA_SHELL: 0x00a800,
+  COIN: 0xe4a010,
+  MUSHROOM_CAP: 0xb81010,
+  MUSHROOM_SPOT: 0xffffff,
+  MUSHROOM_FACE: 0xe4a010,
+  FLAG_POLE: 0x808080,
+  FLAG_GREEN: 0x00a800,
+  CASTLE_GRAY: 0x808080,
+};

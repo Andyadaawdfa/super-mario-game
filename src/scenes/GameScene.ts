@@ -4,6 +4,7 @@ import { Player } from '../entities/Player';
 import { Goomba } from '../entities/Goomba';
 import { Koopa } from '../entities/Koopa';
 import { HUD } from '../ui/HUD';
+import { TouchController } from '../ui/TouchController';
 
 interface BlockData {
   sprite: Phaser.Physics.Arcade.Sprite;
@@ -37,6 +38,7 @@ export class GameScene extends Phaser.Scene {
   private levelComplete = false;
   private deathHandled = false;
   private currentLevel = 1;
+  private touchController!: TouchController;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -61,6 +63,9 @@ export class GameScene extends Phaser.Scene {
     this.cursors = this.input.keyboard!.createCursorKeys();
     this.runKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
     this.fireKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
+
+    // Touch controls for mobile
+    this.touchController = new TouchController(this);
 
     // Groups
     this.groundGroup = this.physics.add.staticGroup();

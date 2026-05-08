@@ -143,5 +143,10 @@ export class MenuScene extends Phaser.Scene {
     this.input.keyboard!.on('keydown-SPACE', () => {
       this.scene.start('GameScene', { level: 1 });
     });
+
+    // Touch to start (for mobile)
+    this.input.on('pointerdown', () => {
+      this.scene.start('GameScene', { level: 1 });
+    });
   }
 }

@@ -14,6 +14,7 @@ export class BootScene extends Phaser.Scene {
   create() {
     this.generateTextures();
     this.generateMarioFromImage();
+    this.generateBossTexture();
     this.scene.start('MenuScene');
   }
 
@@ -44,6 +45,18 @@ export class BootScene extends Phaser.Scene {
     const fireCtx = fireCanvas.getContext('2d')!;
     fireCtx.drawImage(source, 0, 0, 16, 32);
     this.textures.addCanvas('mario_fire', fireCanvas);
+  }
+
+  private generateBossTexture() {
+    const bossImg = this.textures.get('boss');
+    const source = bossImg.getSourceImage() as CanvasImageSource;
+    // Boss at 3x player size (player small is 16x18 → boss 48x60)
+    const canvas = document.createElement('canvas');
+    canvas.width = 48;
+    canvas.height = 60;
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(source, 0, 0, 48, 60);
+    this.textures.addCanvas('boss_sprite', canvas);
   }
 
   private generateTextures() {

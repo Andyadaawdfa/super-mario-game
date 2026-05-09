@@ -11,14 +11,12 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
   private wasStomped = false;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
-    super(scene, x, y, 'boss');
+    super(scene, x, y, 'boss_sprite');
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    // Boss at ~3x player small size (player is 16x18 → boss ~48x60)
-    // Boss PNG is 303x385
-    this.setScale(48 / 303, 60 / 385);
-    this.body!.setSize(280 * this.scaleX, 330 * this.scaleY);
+    // Boss texture is already 48x60 (3x player small size)
+    this.body!.setSize(40, 52);
     this.setGravityY(800);
     this.setDepth(10);
     this.setFlipX(false);

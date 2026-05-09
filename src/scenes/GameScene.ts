@@ -53,9 +53,10 @@ export class GameScene extends Phaser.Scene {
     const levelWidth = 210 * TILE_SIZE;
     this.physics.world.setBounds(0, 0, levelWidth, GAME_HEIGHT + 100);
 
-    // Sky background - different color per level (using UI/UX Pro Max Dark Premium palette)
-    const skyColors: Record<number, number> = { 1: COLORS.SKY, 2: 0x0a0a1a, 3: 0x0f0518 };
-    this.add.rectangle(levelWidth / 2, GAME_HEIGHT / 2, levelWidth, GAME_HEIGHT, skyColors[this.currentLevel] || COLORS.SKY).setDepth(-1);
+    // Sky background (Level 3 uses dark night sky)
+    let skyColor = COLORS.SKY;
+    if (this.currentLevel === 3) skyColor = 0x0f0518;
+    this.add.rectangle(levelWidth / 2, GAME_HEIGHT / 2, levelWidth, GAME_HEIGHT, skyColor).setDepth(-1);
 
     // Add clouds
     this.addClouds(levelWidth);

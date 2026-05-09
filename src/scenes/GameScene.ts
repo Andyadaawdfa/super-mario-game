@@ -3,6 +3,7 @@ import { TILE_SIZE, GAME_WIDTH, GAME_HEIGHT, GAME, PLAYER, COIN, COLORS } from '
 import { Player } from '../entities/Player';
 import { Goomba } from '../entities/Goomba';
 import { Koopa } from '../entities/Koopa';
+import { Boss } from '../entities/Boss';
 import { HUD } from '../ui/HUD';
 import { TouchController } from '../ui/TouchController';
 
@@ -28,6 +29,11 @@ export class GameScene extends Phaser.Scene {
   private fireFlowers!: Phaser.Physics.Arcade.Group;
   private pipes!: Phaser.Physics.Arcade.StaticGroup;
   private flagPole!: Phaser.Physics.Arcade.Sprite;
+  private bossGroup!: Phaser.Physics.Arcade.Group;
+  private boss!: Boss;
+  private bossHintText?: Phaser.GameObjects.Text;
+  private bossStompText?: Phaser.GameObjects.Text;
+  private bossDefeated = false;
 
   private hud!: HUD;
   private score = 0;
@@ -82,6 +88,8 @@ export class GameScene extends Phaser.Scene {
     this.mushrooms = this.physics.add.group();
     this.fireFlowers = this.physics.add.group();
     this.pipes = this.physics.add.staticGroup();
+    this.bossGroup = this.physics.add.group();
+    this.bossDefeated = false;
 
     // Build level based on current level
     if (this.currentLevel === 1) {
@@ -193,6 +201,12 @@ export class GameScene extends Phaser.Scene {
     // Update enemies
     this.goombas.getChildren().forEach(g => (g as Goomba).update());
     this.koopas.getChildren().forEach(k => (k as Koopa).update());
+
+    // Update boss
+    if (this.boss && this.boss.active) {
+      this.boss.update();
+      this.checkBossHintText();
+    }
 
     // Camera boundary - player can't go back
     const camLeft = this.cameras.main.scrollX;
@@ -533,11 +547,48 @@ export class GameScene extends Phaser.Scene {
       this.addKoopa(col * TILE_SIZE, 12 * TILE_SIZE);
     });
 
-    // Flag pole
-    this.addFlagPole(196, 4);
+    // Boss arena — flat platform for the final fight
+    // Solid ground at rows 14-15 (already built above, no gaps at end)
+    // Raised arena platform
+    for (let i = 190; i < 208; i++) {
+      this.addPlatform(i, 11);
+    }
+    // Brick walls flanking the arena
+    for (let row = 8; row < 11; row++) {
+      this.bossGroup.add(this.add.rectangle(190 * TILE_SIZE + 8, row * TILE_SIZE + 8, TILE_SIZE, TILE_SIZE, 0x801800).setDepth(1));
+      this.bossGroup.add(this.add.rectangle(207 * TILE_SIZE + 8, row * TILE_SIZE + 8, TILE_SIZE, TILE_SIZE, 0x801800).setDepth(1));
+    }
+    // Stair steps on the left for the player to get above boss
+    for (let row = 9; row <= 10; row++) {
+      for (let col = 187; col < 190; col++) {
+        this.addPlatform(col, row);
+      }
+    }
+    // Question blocks above the arena for height advantage
+    this.addQuestionBlock(194, 6, 'coin');
+    this.addQuestionBlock(195, 6, 'mushroom');
+    this.addQuestionBlock(196, 6, 'coin');
 
-    // Castle (fortress)
-    this.add.image(203 * TILE_SIZE, 11 * TILE_SIZE, 'castle').setOrigin(0, 1);
+    // Boss — 3x player size, stands at center of arena
+    this.boss = new Boss(this, 198 * TILE_SIZE, 10 * TILE_SIZE);
+    this.bossGroup.add(this.boss);
+
+    // Boss arena background — blue and white vertical stripes
+    for (let col = 191; col < 207; col++) {
+      const color = col % 2 === 0 ? 0x1a1a4e : 0x0a0a2e;
+      this.add.rectangle(col * TILE_SIZE + 8, 7 * TILE_SIZE, TILE_SIZE, 7 * TILE_SIZE, color)
+        .setDepth(-1).setAlpha(0.6);
+    }
+
+    // Pixel basketball decorations floating in the boss arena background
+    const basketballPositions = [
+      { x: 193, y: 4 }, { x: 197, y: 5 }, { x: 201, y: 3 },
+      { x: 205, y: 5 }, { x: 196, y: 2 }, { x: 202, y: 4 },
+    ];
+    basketballPositions.forEach(p => {
+      this.add.image(p.x * TILE_SIZE, p.y * TILE_SIZE, 'basketball')
+        .setDepth(-1).setAlpha(0.5).setScale(1.5).setScrollFactor(0.9);
+    });
   }
 
   private addGround(col: number, row: number) {
@@ -713,6 +764,15 @@ export class GameScene extends Phaser.Scene {
         });
       });
     });
+
+    // Boss collisions (only for Level 3)
+    if (this.boss) {
+      this.physics.add.collider(this.boss, this.groundGroup);
+      this.physics.add.collider(this.boss, this.blocks.map(b => b.sprite));
+      this.physics.add.overlap(this.player, this.boss, () => {
+        this.handleBossCollision();
+      });
+    }
   }
 
   private handleBlockHit(blockSprite: Phaser.Physics.Arcade.Sprite): boolean {
@@ -973,6 +1033,100 @@ export class GameScene extends Phaser.Scene {
     this.score += pts;
     this.hud.updateScore(this.score);
     this.showScorePopup(goomba.x, goomba.y, pts.toString());
+  }
+
+  private handleBossCollision() {
+    if (this.bossDefeated || !this.boss || !this.boss.active) return;
+
+    const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
+    const bossBody = this.boss.body as Phaser.Physics.Arcade.Body;
+
+    // Stomp check: player falling and above boss's upper area
+    if (playerBody.velocity.y > 0 && this.player.y < this.boss.y - 20) {
+      // Don't allow repeat stomps while already in a stomp
+      const defeated = this.boss.stomp();
+      if (defeated) {
+        this.bossDefeated = true;
+        const bonus = 5000;
+        this.score += bonus;
+        this.hud.updateScore(this.score);
+        this.showScorePopup(this.boss.x, this.boss.y, '击败!');
+        this.flashScreen(0xFFD700, 0.2);
+
+        // Complete level after boss defeated
+        this.time.delayedCall(1000, () => {
+          this.completeLevel();
+        });
+      } else {
+        // Regular stomp feedback
+        this.player.stompBounce();
+        this.score += 500;
+        this.hud.updateScore(this.score);
+        this.showScorePopup(this.boss.x, this.boss.y - 30, `${this.boss.getRemaining()}次`);
+        this.flashScreen(0xff6600, 0.1);
+      }
+    } else {
+      // Player touches boss from side/below — take damage
+      if (this.player.hit()) {
+        this.handlePlayerDeath();
+      }
+    }
+  }
+
+  private checkBossHintText() {
+    if (!this.boss || !this.boss.active || this.bossDefeated) {
+      if (this.bossHintText) {
+        this.bossHintText.destroy();
+        this.bossHintText = undefined;
+      }
+      if (this.bossStompText) {
+        this.bossStompText.destroy();
+        this.bossStompText = undefined;
+      }
+      return;
+    }
+
+    // Show hint text when player is near boss area
+    const dist = Math.abs(this.player.x - this.boss.x);
+    if (dist < 200 && !this.bossHintText) {
+      const cx = this.cameras.main.scrollX + GAME_WIDTH / 2;
+
+      // Background panel for readability
+      const panel = this.add.rectangle(cx, 60, GAME_WIDTH - 16, 50, 0x000000, 0.6)
+        .setScrollFactor(0).setDepth(98);
+      panel.setStrokeStyle(1, 0xff4444, 0.5);
+
+      this.bossHintText = this.add.text(cx, 50,
+        '⚠ BOSS 出现! ⚠', {
+        fontSize: '14px',
+        fontFamily: 'Arial, sans-serif',
+        color: '#FF4444',
+        fontStyle: 'bold',
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(99);
+
+      this.bossStompText = this.add.text(cx, 68,
+        '跳跃到 Boss 头上按 ↑ 踩踏 10 次即可通关!', {
+        fontSize: '10px',
+        fontFamily: 'Arial, sans-serif',
+        color: '#FFD700',
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(99);
+
+      // Pulse the hint text
+      this.tweens.add({
+        targets: this.bossHintText,
+        alpha: { from: 1, to: 0.3 },
+        duration: 500,
+        yoyo: true,
+        repeat: 3,
+        ease: 'Sine.easeInOut',
+      });
+    }
+
+    // Update stomp progress counter
+    if (this.bossStompText && this.boss.active) {
+      const remaining = this.boss.getRemaining();
+      this.bossStompText.setText(`跳跃到 Boss 头上踩踏! 还需 ${remaining} 次`);
+    }
   }
 
   private handlePlayerDeath() {

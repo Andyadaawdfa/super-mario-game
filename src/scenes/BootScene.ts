@@ -8,6 +8,7 @@ export class BootScene extends Phaser.Scene {
 
   preload() {
     this.load.image('xiaoheizi', '美术资源/小黑子.png');
+    this.load.image('boss', '美术资源/boss.png');
   }
 
   create() {
@@ -61,6 +62,7 @@ export class BootScene extends Phaser.Scene {
     this.generateSky();
     this.generateCastle();
     this.generateCloud();
+    this.generateBasketball();
   }
 
   private generateGoomba() {
@@ -331,6 +333,25 @@ export class BootScene extends Phaser.Scene {
 
     // Generate texture (size fits the cloud)
     g.generateTexture('cloud', 64, 30);
+    g.destroy();
+  }
+
+  private generateBasketball() {
+    const g = this.make.graphics({ x: 0, y: 0 });
+    const s = TILE_SIZE;
+    // Orange ball body (pixel art)
+    g.fillStyle(0xd4692a);
+    g.fillRect(1, 0, 14, 16);
+    g.fillRect(0, 1, 16, 14);
+    // Brown seam lines
+    g.fillStyle(0x5c3a1e);
+    g.fillRect(0, 7, 16, 2);
+    g.fillRect(7, 0, 2, 16);
+    // Highlight
+    g.fillStyle(0xff8c42);
+    g.fillRect(3, 3, 4, 3);
+    g.fillRect(10, 3, 3, 2);
+    g.generateTexture('basketball', s, s);
     g.destroy();
   }
 }

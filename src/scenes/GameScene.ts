@@ -53,11 +53,17 @@ export class GameScene extends Phaser.Scene {
     const levelWidth = 210 * TILE_SIZE;
     this.physics.world.setBounds(0, 0, levelWidth, GAME_HEIGHT + 100);
 
-    // Sky background
-    this.add.rectangle(levelWidth / 2, GAME_HEIGHT / 2, levelWidth, GAME_HEIGHT, COLORS.SKY).setDepth(-1);
+    // Sky background - different color per level (using UI/UX Pro Max Dark Premium palette)
+    const skyColors: Record<number, number> = { 1: COLORS.SKY, 2: 0x0a0a1a, 3: 0x0f0518 };
+    this.add.rectangle(levelWidth / 2, GAME_HEIGHT / 2, levelWidth, GAME_HEIGHT, skyColors[this.currentLevel] || COLORS.SKY).setDepth(-1);
 
     // Add clouds
     this.addClouds(levelWidth);
+
+    // Level 3: Night sky with stars (UI/UX Pro Max atmospheric design)
+    if (this.currentLevel === 3) {
+      this.addStars(levelWidth);
+    }
 
     // Input
     this.cursors = this.input.keyboard!.createCursorKeys();
@@ -79,8 +85,10 @@ export class GameScene extends Phaser.Scene {
     // Build level based on current level
     if (this.currentLevel === 1) {
       this.buildLevel();
-    } else {
+    } else if (this.currentLevel === 2) {
       this.buildLevel2();
+    } else {
+      this.buildLevel3();
     }
 
     // Player
@@ -133,6 +141,45 @@ export class GameScene extends Phaser.Scene {
         cloud.setDepth(-1); // Behind everything
         // Add slight parallax effect (clouds move slower than camera)
         cloud.setScrollFactor(0.8);
+      }
+    });
+  }
+
+  private addStars(levelWidth: number) {
+    // Night sky stars for Level 3 — scattered white dots with twinkle animation
+    const starPositions = [
+      { x: 50, y: 15 }, { x: 120, y: 25 }, { x: 200, y: 10 }, { x: 280, y: 30 },
+      { x: 350, y: 18 }, { x: 420, y: 8 }, { x: 500, y: 28 }, { x: 580, y: 12 },
+      { x: 650, y: 22 }, { x: 720, y: 35 }, { x: 800, y: 5 }, { x: 880, y: 20 },
+      { x: 950, y: 32 }, { x: 1020, y: 14 }, { x: 1100, y: 28 }, { x: 1180, y: 8 },
+      { x: 1250, y: 24 }, { x: 1320, y: 16 }, { x: 1400, y: 30 }, { x: 1480, y: 10 },
+      { x: 1550, y: 26 }, { x: 1620, y: 18 }, { x: 1700, y: 32 }, { x: 1780, y: 12 },
+      { x: 1850, y: 28 }, { x: 1920, y: 20 }, { x: 2000, y: 34 }, { x: 2080, y: 15 },
+      { x: 2150, y: 25 }, { x: 2220, y: 10 }, { x: 2300, y: 30 }, { x: 2380, y: 22 },
+      { x: 2450, y: 8 }, { x: 2520, y: 28 }, { x: 2600, y: 16 }, { x: 2680, y: 32 },
+      { x: 2750, y: 12 }, { x: 2820, y: 24 }, { x: 2900, y: 18 }, { x: 2980, y: 30 },
+      { x: 3050, y: 10 }, { x: 3120, y: 26 }, { x: 3200, y: 15 }, { x: 3280, y: 34 },
+    ];
+
+    starPositions.forEach(pos => {
+      if (pos.x < levelWidth) {
+        const size = Math.random() > 0.6 ? 2 : 1;
+        const alpha = 0.3 + Math.random() * 0.7;
+        const luminosity = 0xaa + Math.floor(Math.random() * 0x55);
+        const star = this.add.rectangle(pos.x, pos.y, size, size, (luminosity << 16) | (luminosity << 8) | luminosity, alpha)
+          .setDepth(-1)
+          .setScrollFactor(0.7);
+
+        // Subtle twinkle animation
+        this.tweens.add({
+          targets: star,
+          alpha: { from: alpha, to: alpha * 0.2 },
+          duration: 800 + Math.random() * 1200,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+          delay: Math.random() * 2000,
+        });
       }
     });
   }
@@ -378,6 +425,118 @@ export class GameScene extends Phaser.Scene {
 
     // Castle
     this.add.image(207 * TILE_SIZE, 11 * TILE_SIZE, 'castle').setOrigin(0, 1);
+  }
+
+  private buildLevel3() {
+    // Level 3 - "暗夜堡垒" (Night Fortress) — Final level
+    // Dark Premium theme (UI/UX Pro Max style: deep navy sky, golden accents, fortress atmosphere)
+    // Design: hardest difficulty with wide gaps, dense enemies, strategic power-up placement
+
+    // Ground: more gaps than level 2, wider gaps requiring precise jumps
+    const groundGaps = [
+      [10, 12], [22, 25], [34, 37], [46, 49], [58, 61],
+      [70, 73], [82, 85], [94, 97], [106, 109], [118, 121],
+      [130, 133], [142, 145], [154, 157], [166, 169], [178, 181],
+    ];
+
+    for (let col = 0; col < 210; col++) {
+      if (groundGaps.some(([s, e]) => col >= s && col <= e)) continue;
+      this.addGround(col, 14);
+      this.addGround(col, 15);
+    }
+
+    // Floating brick platforms bridging gaps — narrower than level 2 for precision platforming
+    const platforms = [
+      { col: 13, row: 12, length: 3 },
+      { col: 26, row: 11, length: 3 },
+      { col: 38, row: 10, length: 3 },
+      { col: 50, row: 12, length: 3 },
+      { col: 62, row: 11, length: 3 },
+      { col: 74, row: 10, length: 3 },
+      { col: 86, row: 12, length: 3 },
+      { col: 98, row: 11, length: 3 },
+      { col: 110, row: 10, length: 3 },
+      { col: 122, row: 12, length: 3 },
+      { col: 134, row: 11, length: 3 },
+      { col: 146, row: 10, length: 3 },
+      { col: 158, row: 12, length: 3 },
+      { col: 170, row: 11, length: 3 },
+      { col: 182, row: 10, length: 3 },
+      // Stairway ascent near end for visual drama
+      { col: 176, row: 8, length: 4 },
+      { col: 176, row: 5, length: 4 },
+    ];
+
+    platforms.forEach(p => {
+      for (let i = 0; i < p.length; i++) {
+        this.addPlatform(p.col + i, p.row);
+      }
+    });
+
+    // Question blocks with strategic placement — power-ups before difficult sections
+    const questionBlocks = [
+      { col: 8, row: 10, content: 'mushroom' as const },
+      { col: 20, row: 10, content: 'coin' as const },
+      { col: 30, row: 10, content: 'fireflower' as const },
+      { col: 44, row: 10, content: 'mushroom' as const },
+      { col: 56, row: 10, content: 'coin' as const },
+      { col: 68, row: 10, content: 'fireflower' as const },
+      { col: 80, row: 7, content: 'coin' as const },
+      { col: 81, row: 7, content: 'coin' as const },
+      { col: 93, row: 10, content: 'mushroom' as const },
+      { col: 104, row: 10, content: 'coin' as const },
+      { col: 116, row: 10, content: 'fireflower' as const },
+      { col: 128, row: 10, content: 'mushroom' as const },
+      { col: 140, row: 10, content: 'coin' as const },
+      { col: 150, row: 10, content: 'fireflower' as const },
+      { col: 162, row: 7, content: 'coin' as const },
+      { col: 163, row: 7, content: 'coin' as const },
+      { col: 164, row: 7, content: 'coin' as const },
+      { col: 174, row: 10, content: 'mushroom' as const },
+      { col: 186, row: 10, content: 'fireflower' as const },
+    ];
+
+    questionBlocks.forEach(b => {
+      this.addQuestionBlock(b.col, b.row, b.content);
+    });
+
+    // Pipes as fortress obstacles (varied heights)
+    const pipePositions = [
+      { col: 16, row: 12, height: 2 },
+      { col: 36, row: 11, height: 3 },
+      { col: 52, row: 10, height: 4 },
+      { col: 66, row: 12, height: 2 },
+      { col: 88, row: 11, height: 3 },
+      { col: 102, row: 10, height: 4 },
+      { col: 114, row: 12, height: 2 },
+      { col: 132, row: 11, height: 3 },
+      { col: 148, row: 10, height: 4 },
+      { col: 164, row: 12, height: 2 },
+      { col: 176, row: 11, height: 3 },
+      { col: 188, row: 10, height: 4 },
+    ];
+
+    pipePositions.forEach(p => {
+      this.addPipe(p.col, p.row, p.height);
+    });
+
+    // Goombas — dense patrols across the fortress
+    const goombaPositions = [15, 25, 35, 45, 55, 65, 75, 85, 95, 105, 115, 125, 135, 145, 155, 165, 175, 185, 195];
+    goombaPositions.forEach(col => {
+      this.addGoomba(col * TILE_SIZE, 13 * TILE_SIZE);
+    });
+
+    // Koopas — elite guards
+    const koopaPositions = [28, 48, 68, 88, 108, 128, 148, 168, 188];
+    koopaPositions.forEach(col => {
+      this.addKoopa(col * TILE_SIZE, 12 * TILE_SIZE);
+    });
+
+    // Flag pole
+    this.addFlagPole(196, 4);
+
+    // Castle (fortress)
+    this.add.image(203 * TILE_SIZE, 11 * TILE_SIZE, 'castle').setOrigin(0, 1);
   }
 
   private addGround(col: number, row: number) {
@@ -956,11 +1115,13 @@ export class GameScene extends Phaser.Scene {
       ease: 'Sine.easeOut',
     });
 
+    const isFinalLevel = this.currentLevel === 3;
+
     // Title — bounce in
-    const titleText = this.add.text(cx, GAME_HEIGHT / 2 - 30, '关卡完成!', {
+    const titleText = this.add.text(cx, GAME_HEIGHT / 2 - 30, isFinalLevel ? '恭喜通关!' : '关卡完成!', {
       fontSize: '24px',
       fontFamily: 'Arial, sans-serif',
-      color: '#44ff44',
+      color: isFinalLevel ? '#FFD700' : '#44ff44',
       fontStyle: 'bold',
     }).setOrigin(0.5).setDepth(51).setScale(0).setAlpha(0);
 
@@ -1006,7 +1167,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     // Restart prompt — fade in then pulse
-    const nextLevelText = this.add.text(cx, GAME_HEIGHT / 2 + 50, '按 ENTER 进入下一关', {
+    const nextLevelText = this.add.text(cx, GAME_HEIGHT / 2 + 50, isFinalLevel ? '按 ENTER 返回主菜单' : '按 ENTER 进入下一关', {
       fontSize: '14px',
       fontFamily: 'Arial, sans-serif',
       color: '#ffffff',
@@ -1032,15 +1193,15 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard!.once('keydown-ENTER', () => {
       // Move to next level
       const nextLevel = this.currentLevel + 1;
-      if (nextLevel <= 2) {
+      if (nextLevel <= 3) {
         // Go to next level
         this.scene.start('GameScene', { level: nextLevel });
       } else {
-        // Game completed - restart from level 1
+        // All levels completed - return to menu
         this.score = 0;
         this.coinCount = 0;
         this.lives = GAME.LIVES;
-        this.scene.start('GameScene', { level: 1 });
+        this.scene.start('MenuScene');
       }
     });
   }
